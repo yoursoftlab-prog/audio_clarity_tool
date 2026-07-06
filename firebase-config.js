@@ -25,7 +25,7 @@ export const firebaseConfig = {
 // (e.g. a Cloud Function checking the request's Origin header
 // before doing anything sensitive, like verifying a payment).
 // Treat this purely as a friendly speed bump.
-export const allowedHosts = ["yoursoftlab-prog.github.io", "localhost", "127.0.0.1"];
+export const allowedHosts = ["https://github.com/yoursoftlab-prog/audio_clarity_tool"];
 
 // Number of free enhancements a signed-in, non-premium account gets.
 // Tracked in Firestore at usage/{uid} — see the main app script.

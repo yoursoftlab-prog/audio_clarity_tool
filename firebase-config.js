@@ -1,0 +1,51 @@
+// ══════════════════════════════════════════════════════════════
+// FIREBASE SETUP — fill in your own project's config below.
+// Create a project at https://console.firebase.google.com, enable:
+//   • Authentication → Sign-in method → Google
+//   • Firestore Database (production mode) with the security rules
+//     from SECURITY_RULES.md in this same folder
+// Then paste your web app config here (Project settings → General
+// → Your apps → SDK setup and configuration).
+// ══════════════════════════════════════════════════════════════
+export const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Hostnames this app is allowed to run from. Add your GitHub Pages
+// domain (e.g. "yourusername.github.io"). This is a *client-side*
+// convenience gate only — it deters casual copy-paste re-hosting,
+// but anyone can delete this file from a saved copy, so it is NOT
+// real access control. Real enforcement has to happen server-side
+// (e.g. a Cloud Function checking the request's Origin header
+// before doing anything sensitive, like verifying a payment).
+// Treat this purely as a friendly speed bump.
+export const allowedHosts = ["yoursoftlab-prog.github.io", "localhost", "127.0.0.1"];
+
+// Number of free enhancements a signed-in, non-premium account gets.
+// Tracked in Firestore at usage/{uid} — see the main app script.
+export const FREE_LIMIT = 5;
+
+// True once you've replaced the placeholder apiKey above with a
+// real one. While false, the app runs in local demo mode (no
+// Firebase project needed) so you can still test the UI.
+export function isConfigured() {
+  return !!(firebaseConfig && firebaseConfig.apiKey !== "YOUR_API_KEY");
+}
+
+// Shows the "Unauthorized Copy" overlay if this page is running on
+// a hostname that isn't in allowedHosts. See the comment on
+// allowedHosts above — this is a deterrent, not real security.
+export function runOriginGate() {
+  const host = location.hostname;
+  if (!allowedHosts.includes(host)) {
+    document.addEventListener("DOMContentLoaded", () => {
+      const el = document.getElementById("unauthorized-overlay");
+      if (el) el.style.display = "flex";
+    });
+  }
+}

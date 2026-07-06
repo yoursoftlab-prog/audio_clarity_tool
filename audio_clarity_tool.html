@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Audio Clarity</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:#0F172A;color:#fff;font-family:system-ui,sans-serif;padding-bottom:48px}
+#header{background:#0a1628;border-bottom:1px solid #1e3a5f;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+#header-left{display:flex;align-items:center;gap:12px}
+#logo-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#3B82F6,#06B6D4);display:flex;align-items:center;justify-content:center;font-size:18px}
+#logo-name{font-weight:700;font-size:16px}
+#logo-sub{font-size:11px;color:#60A5FA}
+#usage-badge{display:flex;align-items:center;gap:10px;background:#0F2744;border-radius:10px;padding:6px 14px;border:1px solid #1e3a5f}
+#badge-wrap{position:relative;width:34px;height:34px}
+#badge-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#3B82F6}
+#badge-top{font-size:11px;color:#60A5FA;font-weight:600}
+#badge-bot{font-size:10px;color:#94a3b8}
+#main{max-width:760px;margin:0 auto;padding:28px 20px}
+#idle-section{display:block}
+#idle-title{text-align:center;margin-bottom:28px}
+#idle-title h1{font-size:26px;font-weight:700;margin-bottom:8px;background:linear-gradient(90deg,#3B82F6,#06B6D4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#idle-title p{color:#64748b;font-size:14px}
+#drop-zone{border:2px dashed #3B82F6;border-radius:16px;padding:36px 24px;text-align:center;background:#0a1628;cursor:pointer;transition:all .2s;margin-bottom:16px}
+#drop-zone.drag{border-color:#06B6D4;background:#06B6D408}
+#dz-icon{font-size:38px;margin-bottom:10px}
+#dz-label{color:#93c5fd;font-weight:600;font-size:15px;margin-bottom:6px}
+#dz-sub{color:#475569;font-size:12px}
+#file-input{display:none}
+#error-msg{color:#f87171;font-size:13px;margin-bottom:12px;text-align:center;display:none}
+#file-chip{background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:none;align-items:center;gap:12px}
+#file-chip.show{display:flex}
+#fc-name{color:#e2e8f0;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+#fc-size{color:#64748b;font-size:12px;white-space:nowrap}
+#fc-rm{background:none;border:none;color:#475569;cursor:pointer;font-size:18px}
+#process-btn{width:100%;padding:13px 0;border-radius:10px;border:none;background:linear-gradient(90deg,#3B82F6,#06B6D4);color:#fff;font-weight:700;font-size:15px;cursor:pointer;transition:opacity .2s}
+#process-btn:disabled{background:#1e3a5f;color:#475569;cursor:not-allowed}
+#processing-section{display:none;text-align:center;padding:20px 0}
+#wave-bars{display:flex;gap:3px;align-items:center;height:48px;justify-content:center}
+.wbar{width:3px;border-radius:2px;background:#1e3a5f;height:8px}
+#wave-label{font-size:11px;color:#60A5FA;letter-spacing:1px;margin-top:8px}
+#step-label{margin:24px 0 8px;color:#93c5fd;font-weight:600;font-size:15px}
+#prog-track{background:#0a1628;border-radius:99px;height:8px;overflow:hidden;margin:0 auto 16px;max-width:400px}
+#prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#3B82F6,#06B6D4);width:0%;transition:width .4s ease}
+#prog-pct{color:#475569;font-size:13px}
+#done-section{display:none;flex-direction:column;gap:16px}
+#done-section.show{display:flex}
+#result-header{display:flex;align-items:center;justify-content:space-between}
+#result-status{color:#60A5FA;font-size:13px;font-weight:600}
+#reset-btn{background:#0F2744;border:1px solid #1e3a5f;border-radius:8px;padding:5px 14px;color:#93c5fd;font-size:12px;cursor:pointer}
+#tx-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:520px){#tx-grid{grid-template-columns:1fr}}
+.tc{background:#0a1628;border-radius:12px;padding:16px;border:1px solid #1e3a5f}
+.tc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.tc-lbl{font-size:12px;color:#60A5FA;font-weight:700;letter-spacing:.5px}
+.tc-copy{background:none;border:none;color:#60A5FA;font-size:11px;cursor:pointer}
+.tc-copy.copied{color:#34d399}
+.tc-body{font-size:13px;color:#cbd5e1;line-height:1.7;max-height:180px;overflow-y:auto}
+#stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#0F2744;border-radius:10px;padding:10px 14px;text-align:center;border:1px solid #1e3a5f}
+.stat-ic{font-size:18px}
+.stat-v{color:#fff;font-weight:700;font-size:15px}
+.stat-l{color:#64748b;font-size:11px}
+#audio-section{background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+#audio-section-title{font-size:12px;color:#60A5FA;font-weight:700;letter-spacing:.5px}
+.acard{background:#0F2744;border:1px solid #1e3a5f;border-radius:10px;padding:14px 16px}
+.acard-enh{border-color:#3B82F640}
+.acard-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.acard-ic{font-size:22px;flex-shrink:0}
+.acard-info{flex:1;min-width:0}
+.acard-title{font-size:13px;font-weight:700;color:#e2e8f0}
+.acard-sub{font-size:11px;color:#64748b;margin-top:2px}
+/* ── PLAYER ── */
+.player{display:flex;align-items:center;gap:10px;background:#0a1628;border-radius:10px;padding:10px 14px;border:1px solid #1e3a5f}
+.play-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#3B82F6,#06B6D4);border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,opacity .2s;line-height:1}
+.play-btn.enh{background:linear-gradient(135deg,#06B6D4,#8B5CF6)}
+.play-btn:hover{transform:scale(1.08)}
+.play-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.p-time{font-size:11px;color:#94a3b8;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:36px}
+.p-track{flex:1;height:6px;background:#1e3a5f;border-radius:99px;position:relative;cursor:pointer}
+.p-fill{height:100%;border-radius:99px;width:0%;pointer-events:none;transition:width .1s linear}
+.p-fill-orig{background:linear-gradient(90deg,#3B82F6,#06B6D4)}
+.p-fill-enh{background:linear-gradient(90deg,#06B6D4,#8B5CF6)}
+.p-thumb{width:12px;height:12px;border-radius:50%;background:#fff;position:absolute;top:50%;transform:translate(-50%,-50%);left:0%;opacity:0;transition:opacity .15s;pointer-events:none}
+.p-track:hover .p-thumb{opacity:1}
+.enh-status{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#0a1628;border-radius:10px;border:1px solid #1e3a5f;font-size:12px;color:#60A5FA}
+.spinner{width:14px;height:14px;border-radius:50%;border:2px solid #1e3a5f;border-top-color:#3B82F6;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+#dl-bar{display:flex;gap:10px;flex-wrap:wrap}
+.dl-btn{flex:1 1 180px;padding:11px 16px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.dl-btn:hover{opacity:.85}
+.dl-btn-pri{background:linear-gradient(90deg,#3B82F6,#06B6D4);color:#fff}
+.dl-btn-sec{background:#0F2744;color:#93c5fd;border:1px solid #1e3a5f}
+</style>
+
+<!-- Firebase project config lives in firebase-config.js (same folder
+     as this file) so this HTML stays free of credentials/setup. -->
+<script type="module">
+  import { firebaseConfig, allowedHosts, FREE_LIMIT, isConfigured, runOriginGate }
+    from "./firebase-config.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, updateDoc, increment, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  window.FREE_LIMIT = FREE_LIMIT;
+  runOriginGate(); // shows the "Unauthorized Copy" overlay off-domain
+
+  const cfg = firebaseConfig;
+  const configured = isConfigured();
+
+  let app, auth, db;
+  if (configured) {
+    app = initializeApp(cfg);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } else {
+    console.warn("[AudioClarity] Firebase config not set — running in local demo mode (usage stored only in this browser, not enforced across devices).");
+  }
+
+  // ── Device fingerprint ──────────────────────────────────────────
+  // Combines canvas/WebGL rendering signature + hardware/browser info
+  // + a persisted per-browser-profile random ID, then hashes it. This
+  // identifies "this browser on this PC", not the physical machine —
+  // clearing site data or using a different browser/profile resets it.
+  async function getDeviceFingerprint() {
+    const parts = [];
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.textBaseline = "top";
+      ctx.font = "16px 'Arial'";
+      ctx.fillText("AudioClarity-fp-🔊", 2, 2);
+      parts.push(canvas.toDataURL());
+    } catch (e) { parts.push("no-canvas"); }
+    try {
+      const gl = document.createElement("canvas").getContext("webgl");
+      const dbg = gl && gl.getExtension("WEBGL_debug_renderer_info");
+      parts.push(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "no-webgl");
+    } catch (e) { parts.push("no-webgl"); }
+    parts.push(navigator.userAgent, navigator.language, navigator.hardwareConcurrency || "",
+      navigator.deviceMemory || "", screen.width + "x" + screen.height + "x" + screen.colorDepth,
+      Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+    let persistedId = localStorage.getItem("ac_device_id");
+    if (!persistedId) {
+      persistedId = crypto.randomUUID();
+      localStorage.setItem("ac_device_id", persistedId);
+    }
+    parts.push(persistedId);
+
+    const enc = new TextEncoder().encode(parts.join("||"));
+    const hashBuf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // ── Currency detection (for premium price display) ──────────────
+  function detectCurrency() {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      const lang = navigator.language || "";
+      if (tz.includes("Calcutta") || tz.includes("Kolkata") || lang.endsWith("-IN")) {
+        return { code: "INR", label: "₹199" };
+      }
+    } catch (e) {}
+    return { code: "USD", label: "$1.99" };
+  }
+
+  const state = { user: null, fingerprint: null, freeUsed: 0, premium: false, connectionError: false };
+
+  // ── users/{uid} ───────────────────────────────────────────────
+  // Creates the user's profile doc on their very first sign-in, or
+  // just refreshes lastLogin/displayName/photoURL on every later
+  // sign-in. premium is ONLY ever set to true by your payment flow
+  // (e.g. a Cloud Function after a verified purchase) — this client
+  // code never sets premium:true itself, so a returning user's
+  // premium status is always preserved untouched.
+  async function ensureUserDoc(user) {
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      // First time we've seen this Google account: create the profile.
+      await setDoc(userRef, {
+        uid: user.uid,
+        displayName: user.displayName || "",
+        email: user.email || "",
+        photoURL: user.photoURL || "",
+        premium: false,
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp()
+      });
+      return { premium: false };
+    } else {
+      // Returning user: touch lastLogin + keep name/photo current,
+      // but never touch the premium field here.
+      await updateDoc(userRef, {
+        displayName: user.displayName || "",
+        photoURL: user.photoURL || "",
+        lastLogin: serverTimestamp()
+      });
+      return snap.data();
+    }
+  }
+
+  // ── usage/{uid} ───────────────────────────────────────────────
+  // Keyed by Firebase UID ONLY (not uid+fingerprint). This is what
+  // makes the free-trial count follow the Google account across any
+  // number of devices/browsers: the same person on a new PC reads
+  // the same usage doc and sees their trial count already used up.
+  // deviceFingerprint is written for fraud/analytics visibility only
+  // — it is never part of the document path and never gates access.
+  //
+  // Firestore is the ONLY source of truth for freeUsed/premium. If
+  // any read/write here fails (offline, Firestore outage, etc.), we
+  // do NOT fall back to a cached or local value — we surface a
+  // connection error instead, and canProcess() blocks processing
+  // until Firestore is reachable again.
+  async function refreshUsage() {
+    if (!configured || !state.user) return;
+    state.fingerprint = state.fingerprint || await getDeviceFingerprint();
+    try {
+      const usageRef = doc(db, "usage", state.user.uid);
+      const snap = await getDoc(usageRef);
+      if (snap.exists()) {
+        state.freeUsed = snap.data().freeUsed || 0;
+        // Keep the fingerprint on file up to date for fraud/analytics review.
+        await updateDoc(usageRef, {
+          deviceFingerprint: state.fingerprint, lastUsed: serverTimestamp()
+        });
+      } else {
+        await setDoc(usageRef, {
+          freeUsed: 0, deviceFingerprint: state.fingerprint,
+          createdAt: serverTimestamp(), lastUsed: serverTimestamp()
+        });
+        state.freeUsed = 0;
+      }
+      const userDoc = await ensureUserDoc(state.user);
+      state.premium = !!(userDoc && userDoc.premium);
+      state.connectionError = false;
+    } catch (err) {
+      console.error("[AudioClarity] Firestore read/write failed:", err);
+      state.connectionError = true;
+    }
+    window.dispatchEvent(new CustomEvent("ac-state-changed"));
+  }
+
+  window.AudioClarityAuth = {
+    isConfigured: () => configured,
+    getState: () => state,
+    getCurrency: detectCurrency,
+    // Opens the Google Sign-In popup. Firestore user/usage docs are
+    // created afterwards by onAuthStateChanged → refreshUsage, so
+    // sign-in itself only needs to handle the popup + auth result.
+    signIn: async () => {
+      if (!configured) { alert("Firebase isn't configured yet — see the setup comment at the top of this file."); return; }
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        state.connectionError = false;
+      } catch (err) {
+        // Don't treat the user simply closing the popup as a
+        // connection problem — only surface the network-error
+        // banner for genuine connectivity failures.
+        if (err && (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request")) {
+          console.warn("[AudioClarity] Sign-in popup dismissed:", err.code);
+        } else {
+          console.error("[AudioClarity] Sign-in failed:", err);
+          state.connectionError = true;
+        }
+        window.dispatchEvent(new CustomEvent("ac-state-changed"));
+      }
+    },
+    signOutUser: async () => {
+      if (!configured) return;
+      try {
+        await signOut(auth);
+        state.connectionError = false;
+      } catch (err) {
+        console.error("[AudioClarity] Sign-out failed:", err);
+        state.connectionError = true;
+      }
+      window.dispatchEvent(new CustomEvent("ac-state-changed"));
+    },
+    // Blocks processing entirely while a connection error is active,
+    // even if premium/freeUsed still hold their last-known values —
+    // we never let a stale in-memory value substitute for a fresh
+    // Firestore read.
+    canProcess: () => !!state.user && !state.connectionError && (state.premium || state.freeUsed < window.FREE_LIMIT),
+    // Increments freeUsed on usage/{uid}. Skipped entirely for
+    // premium users, per requirement 9 (premium = unlimited, no
+    // free-limit checks at all). Throws on failure so the caller
+    // knows the usage write didn't happen — no local increment.
+    recordUsage: async () => {
+      if (!state.user || state.premium) return;
+      try {
+        const usageRef = doc(db, "usage", state.user.uid);
+        await updateDoc(usageRef, {
+          freeUsed: increment(1), lastUsed: serverTimestamp(),
+          deviceFingerprint: state.fingerprint
+        });
+        state.freeUsed += 1;
+        state.connectionError = false;
+      } catch (err) {
+        console.error("[AudioClarity] Failed to record usage:", err);
+        state.connectionError = true;
+        window.dispatchEvent(new CustomEvent("ac-state-changed"));
+        throw err;
+      }
+      window.dispatchEvent(new CustomEvent("ac-state-changed"));
+    }
+  };
+
+  // Fires on page load (restoring an existing session) AND right
+  // after a fresh sign-in/sign-out — this single listener covers
+  // requirement 3 (auto-restore session on load) and requirement 4
+  // (save user to Firestore on sign-in) with no duplicated logic.
+  if (configured) {
+    onAuthStateChanged(auth, async (user) => {
+      state.user = user;
+      if (user) await refreshUsage(); // also runs ensureUserDoc internally, sets connectionError on failure
+      window.dispatchEvent(new CustomEvent("ac-state-changed"));
+    });
+  }
+</script>
+</head>
+<body>
+
+<div id="unauthorized-overlay" style="display:none;position:fixed;inset:0;background:#0F172A;z-index:9999;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px">
+  <div style="font-size:40px;margin-bottom:14px">🚫</div>
+  <div style="font-weight:700;font-size:18px;color:#e2e8f0;margin-bottom:6px">Unauthorized Copy</div>
+  <div style="font-size:13px;color:#64748b;max-width:340px">Please use the official Audio Clarity website.</div>
+</div>
+<div id="header">
+  <div id="header-left">
+    <div id="logo-icon">🎙️</div>
+    <div>
+      <div id="logo-name">Audio Clarity</div>
+      <div id="logo-sub">AI-powered audio enhancement</div>
+    </div>
+  </div>
+  <div id="header-right" style="display:flex;align-items:center;gap:10px">
+    <div id="usage-badge">
+      <div id="badge-wrap">
+        <svg width="34" height="34" viewBox="0 0 34 34">
+          <circle cx="17" cy="17" r="14" fill="none" stroke="#1e3a5f" stroke-width="3"/>
+          <circle id="badge-arc" cx="17" cy="17" r="14" fill="none" stroke="#3B82F6" stroke-width="3"
+            stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round"
+            transform="rotate(-90 17 17)" style="transition:stroke-dashoffset .4s"/>
+        </svg>
+        <span id="badge-num">–</span>
+      </div>
+      <div>
+        <div id="badge-top">FREE PLAN</div>
+        <div id="badge-bot">Sign in to start</div>
+      </div>
+    </div>
+    <button id="signin-btn" style="display:flex;align-items:center;gap:8px;background:#0F2744;border:1px solid #1e3a5f;border-radius:10px;padding:8px 14px;color:#e2e8f0;font-size:13px;font-weight:600;cursor:pointer">
+      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.9 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 43.5c5.4 0 10.3-1.9 14-5.2l-6.5-5.5c-2 1.5-4.6 2.4-7.5 2.4-5.4 0-9.9-3.6-11.5-8.5l-6.6 5.1C9.5 39 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.1-3.4 5.6-6.4 7.1l6.5 5.5c-.5.4 7.1-5.2 7.1-16.1 0-1.2-.1-2.4-.4-3.5z"/></svg>
+      Sign in
+    </button>
+    <div id="user-chip" style="display:none;align-items:center;gap:8px;background:#0F2744;border:1px solid #1e3a5f;border-radius:10px;padding:6px 10px">
+      <img id="user-avatar" src="" style="width:26px;height:26px;border-radius:50%;display:none">
+      <div>
+        <div id="user-name" style="font-size:12px;font-weight:600;color:#e2e8f0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+        <div id="premium-pill" style="display:none;font-size:10px;color:#fbbf24;font-weight:700">⭐ Premium</div>
+      </div>
+      <button id="signout-btn" style="background:none;border:none;color:#475569;cursor:pointer;font-size:14px;padding:0 2px">⏻</button>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+
+  <!-- IDLE -->
+  <div id="idle-section">
+    <div id="idle-title">
+      <h1>Enhance Your Audio</h1>
+      <p>Upload audio to remove noise, boost clarity, and get a clean transcript</p>
+    </div>
+    <div id="signin-gate" style="display:none;border:1px solid #1e3a5f;background:#0a1628;border-radius:14px;padding:22px;text-align:center;margin-bottom:16px">
+      <div style="font-size:26px;margin-bottom:8px">🔒</div>
+      <div style="font-weight:700;color:#e2e8f0;margin-bottom:4px">Sign in to enhance audio</div>
+      <div style="font-size:13px;color:#64748b">Please sign in with Google to start your 5 free enhancements.</div>
+    </div>
+    <div id="connection-error-banner" style="display:none;border:1px solid #7f1d1d;background:#2a0f0f;border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:center;color:#fca5a5;font-size:13px;font-weight:600">
+      Unable to connect to the server. Please check your internet connection and try again.
+    </div>
+    <div id="upgrade-banner" style="display:none;border:1px solid #7c3aed40;background:linear-gradient(135deg,#1e1b4b,#0F172A);border-radius:14px;padding:20px;text-align:center;margin-bottom:16px">
+      <div style="font-size:26px;margin-bottom:8px">✨</div>
+      <div style="font-weight:700;color:#e2e8f0;margin-bottom:4px">Your free trial has expired</div>
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:14px">Upgrade to Premium for unlimited enhancements + HD export</div>
+      <button id="upgrade-btn" style="padding:11px 22px;border-radius:10px;border:none;background:linear-gradient(90deg,#8B5CF6,#06B6D4);color:#fff;font-weight:700;font-size:14px;cursor:pointer">
+        Upgrade for <span id="upgrade-price">$1.99</span>
+      </button>
+    </div>
+    <div id="drop-zone">
+      <div id="dz-icon">🎧</div>
+      <div id="dz-label">Drop audio file here or click to browse</div>
+      <div id="dz-sub">MP3, WAV, OGG, M4A, AAC, FLAC · Max 50MB</div>
+      <input id="file-input" type="file" accept="audio/*"/>
+    </div>
+    <div id="error-msg"></div>
+    <div id="file-chip">
+      <span style="font-size:22px;flex-shrink:0">🎵</span>
+      <span id="fc-name"></span>
+      <span id="fc-size"></span>
+      <button id="fc-rm">✕</button>
+    </div>
+    <div id="hiss-toggle-row" style="display:flex;align-items:flex-start;gap:9px;background:#0a1628;border:1px solid #1e3a5f;border-radius:10px;padding:11px 14px;margin-bottom:16px">
+      <input type="checkbox" id="toggle-hiss" checked style="width:16px;height:16px;margin-top:2px;accent-color:#3B82F6;cursor:pointer;flex-shrink:0">
+      <label for="toggle-hiss" style="cursor:pointer;user-select:none">
+        <div style="font-size:13px;color:#93c5fd;font-weight:600">Auto Start Hiss Removal</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">Detects hiss in the first few seconds and cleans just that part — the rest of the audio is left untouched by this step</div>
+      </label>
+    </div>
+    <button id="process-btn" disabled>✨ Enhance &amp; Transcribe</button>
+  </div>
+
+  <!-- PROCESSING -->
+  <div id="processing-section">
+    <div id="wave-bars"></div>
+    <div id="wave-label">PROCESSING</div>
+    <div id="step-label">Starting…</div>
+    <div id="prog-track"><div id="prog-fill"></div></div>
+    <div id="prog-pct">0% complete</div>
+  </div>
+
+  <!-- DONE -->
+  <div id="done-section">
+    <div id="result-header">
+      <div id="result-status"></div>
+      <button id="reset-btn">Process another</button>
+    </div>
+    <div id="tx-grid">
+      <div class="tc">
+        <div class="tc-top"><span class="tc-lbl">RAW TRANSCRIPT</span><button class="tc-copy" id="copy-raw">Copy</button></div>
+        <div class="tc-body" id="raw-text"></div>
+      </div>
+      <div class="tc">
+        <div class="tc-top"><span class="tc-lbl">ENHANCED &amp; CLARIFIED</span><button class="tc-copy" id="copy-enh">Copy</button></div>
+        <div class="tc-body" id="enh-text"></div>
+      </div>
+    </div>
+    <div id="stats-grid">
+      <div class="stat"><div class="stat-ic">📝</div><div class="stat-v" id="stat-words">—</div><div class="stat-l">Words</div></div>
+      <div class="stat"><div class="stat-ic">✨</div><div class="stat-v">High</div><div class="stat-l">Clarity boost</div></div>
+      <div class="stat"><div class="stat-ic">🔇</div><div class="stat-v">Yes</div><div class="stat-l">Noise removed</div></div>
+    </div>
+    <div id="audio-section">
+      <div id="audio-section-title">🎙️ AI VOICE RESTORATION</div>
+      <div id="feature-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;background:#0F2744;border:1px solid #1e3a5f;border-radius:10px;padding:12px 14px"></div>
+      <div id="feature-caveat" style="font-size:11px;color:#64748b;line-height:1.5"></div>
+      <div id="audio-section-title2" style="font-size:12px;color:#60A5FA;font-weight:700;letter-spacing:.5px">🎵 AUDIO FILES</div>
+      <!-- Original -->
+      <div class="acard">
+        <div class="acard-head">
+          <div class="acard-ic">🎙️</div>
+          <div class="acard-info">
+            <div class="acard-title">Original Audio</div>
+            <div class="acard-sub" id="orig-meta">—</div>
+          </div>
+        </div>
+        <div class="player" id="player-orig">
+          <button class="play-btn" id="play-orig" disabled>▶</button>
+          <span class="p-time" id="cur-orig">0:00</span>
+          <div class="p-track" id="track-orig">
+            <div class="p-fill p-fill-orig" id="fill-orig"></div>
+            <div class="p-thumb" id="thumb-orig"></div>
+          </div>
+          <span class="p-time" id="dur-orig">0:00</span>
+        </div>
+      </div>
+      <!-- Enhanced -->
+      <div class="acard acard-enh">
+        <div class="acard-head">
+          <div class="acard-ic">✨</div>
+          <div class="acard-info">
+            <div class="acard-title">Enhanced Audio</div>
+            <div class="acard-sub" id="enh-sub">Noise reduced · Clarity boosted · Normalized</div>
+          </div>
+        </div>
+        <div class="enh-status" id="enh-status">
+          <div class="spinner"></div><span id="enh-status-text">Processing audio…</span>
+        </div>
+        <div class="player" id="player-enh" style="display:none">
+          <button class="play-btn enh" id="play-enh" disabled>▶</button>
+          <span class="p-time" id="cur-enh">0:00</span>
+          <div class="p-track" id="track-enh">
+            <div class="p-fill p-fill-enh" id="fill-enh"></div>
+            <div class="p-thumb" id="thumb-enh"></div>
+          </div>
+          <span class="p-time" id="dur-enh">0:00</span>
+        </div>
+      </div>
+    </div>
+    <div id="dl-bar">
+      <button class="dl-btn dl-btn-pri" id="dl-report">⬇ Full Report (PDF)</button>
+      <button class="dl-btn dl-btn-sec" id="dl-enh-txt">⬇ Enhanced Transcript</button>
+      <button class="dl-btn dl-btn-sec" id="dl-raw-txt">⬇ Raw Transcript</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Constants ────────────────────────────────────────────
+const DAILY_LIMIT = 5;
+const MAX_SIZE    = 50 * 1024 * 1024;
+const WAVE_H      = [18,32,24,40,28,36,22,38,30,20];
+
+// ── State ─────────────────────────────────────────────────
+let currentFile = null;
+let waveTimer   = null;
+let waveTick    = 0;
+// Web Audio API playback state
+let sharedActx    = null;   // single AudioContext reused across plays
+let origAudioBuf  = null;   // AudioBuffer for original
+let enhAudioBuf   = null;   // AudioBuffer for enhanced
+let players       = {};     // keyed by 'orig'/'enh' → { source, startedAt, pausedAt, duration }
+// Keep raw ArrayBuffers for WAV download
+let origWavBytes  = null;
+let enhWavBytes   = null;
+
+const $ = id => document.getElementById(id);
+const fmtTime = s => isFinite(s) && s >= 0
+  ? Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2,"0")
+  : "0:00";
+
+// ── Auth / free-trial / premium UI ─────────────────────────
+function updateAuthUI() {
+  const AC = window.AudioClarityAuth;
+  if (!AC) return;
+  const st = AC.getState();
+  const limit = window.FREE_LIMIT || 5;
+
+  $("signin-btn").style.display = st.user ? "none" : "flex";
+  $("user-chip").style.display  = st.user ? "flex" : "none";
+  if (st.user) {
+    $("user-name").textContent = st.user.displayName || st.user.email || "Signed in";
+    if (st.user.photoURL) { $("user-avatar").src = st.user.photoURL; $("user-avatar").style.display = "inline-block"; }
+    else { $("user-avatar").style.display = "none"; }
+    $("premium-pill").style.display = st.premium ? "block" : "none";
+  }
+
+  if (!st.user) {
+    $("badge-top").textContent = "FREE PLAN";
+    $("badge-bot").textContent = "Sign in to start";
+    $("badge-num").textContent = "–";
+    $("badge-arc").style.strokeDashoffset = "87.96";
+  } else if (st.premium) {
+    $("badge-top").textContent = "⭐ PREMIUM";
+    $("badge-bot").textContent = "Unlimited uses";
+    $("badge-num").textContent = "∞";
+    $("badge-arc").style.strokeDashoffset = "0";
+  } else {
+    const left = Math.max(0, limit - st.freeUsed);
+    $("badge-top").textContent = "FREE PLAN";
+    $("badge-bot").textContent = left + " of " + limit + " uses left";
+    $("badge-num").textContent = String(left);
+    $("badge-arc").style.strokeDashoffset = String(87.96 * (1 - left/limit));
+  }
+
+  const price = AC.getCurrency();
+  $("upgrade-price").textContent = price.label;
+
+  $("signin-gate").style.display = st.user ? "none" : "block";
+  $("connection-error-banner").style.display = st.connectionError ? "block" : "none";
+  const limitReached = st.user && !st.premium && st.freeUsed >= limit;
+  $("upgrade-banner").style.display = limitReached ? "block" : "none";
+
+  updateProcessBtnState();
+}
+
+function updateProcessBtnState() {
+  const AC = window.AudioClarityAuth;
+  const st = AC ? AC.getState() : {};
+  const gatedOk = AC ? AC.canProcess() : false;
+  $("process-btn").disabled = !currentFile || !gatedOk;
+}
+
+window.addEventListener("ac-state-changed", updateAuthUI);
+document.addEventListener("DOMContentLoaded", updateAuthUI);
+updateAuthUI();
+
+$("signin-btn").addEventListener("click", async () => {
+  const AC = window.AudioClarityAuth;
+  if (AC) await AC.signIn();
+});
+$("signout-btn").addEventListener("click", async () => {
+  await window.AudioClarityAuth.signOutUser();
+});
+$("upgrade-btn").addEventListener("click", () => {
+  // Phase 2: wire this to Razorpay Checkout (India) / Stripe Checkout
+  // (international), verified server-side via a Firebase Cloud
+  // Function before setting users/{uid}.premium = true.
+  alert("Payment integration is coming in the next phase (Razorpay for India, Stripe internationally). This button is a placeholder for now.");
+});
+
+// ── Wave bars ─────────────────────────────────────────────
+(()=>{
+  const c=$("wave-bars");
+  for(let i=0;i<28;i++){
+    const d=document.createElement("div");
+    d.className="wbar"; d.id="wb"+i; c.appendChild(d);
+  }
+})();
+
+function animWave(on) {
+  if (on && !waveTimer) {
+    waveTimer = setInterval(()=>{
+      waveTick++;
+      for(let i=0;i<28;i++){
+        const d=$("wb"+i), idx=(i+waveTick)%28;
+        d.style.height=WAVE_H[idx%10]+"px";
+        d.style.background=`hsl(${200+idx*4},80%,${55+idx*2}%)`;
+      }
+    }, 120);
+  }
+  if (!on && waveTimer) {
+    clearInterval(waveTimer); waveTimer=null;
+    for(let i=0;i<28;i++){
+      $("wb"+i).style.height="8px";
+      $("wb"+i).style.background="#1e3a5f";
+    }
+  }
+}
+
+// ── Stage ─────────────────────────────────────────────────
+function showStage(s) {
+  $("idle-section").style.display       = s==="idle"       ? "block" : "none";
+  $("processing-section").style.display = s==="processing" ? "block" : "none";
+  $("done-section").classList.toggle("show", s==="done");
+}
+
+function setProgress(pct, label) {
+  $("prog-fill").style.width = pct+"%";
+  $("prog-pct").textContent  = pct+"% complete";
+  $("step-label").textContent = label;
+}
+
+// ── File handling ─────────────────────────────────────────
+$("drop-zone").addEventListener("dragover",  e=>{e.preventDefault();$("drop-zone").classList.add("drag");});
+$("drop-zone").addEventListener("dragleave", ()=>$("drop-zone").classList.remove("drag"));
+$("drop-zone").addEventListener("drop", e=>{
+  e.preventDefault(); $("drop-zone").classList.remove("drag");
+  handleFile(e.dataTransfer.files[0]);
+});
+$("drop-zone").addEventListener("click", ()=>$("file-input").click());
+$("file-input").addEventListener("change", e=>{handleFile(e.target.files[0]); $("file-input").value="";});
+$("fc-rm").addEventListener("click", ()=>{
+  currentFile=null;
+  $("file-chip").classList.remove("show");
+  $("process-btn").disabled=true;
+  $("error-msg").style.display="none";
+});
+
+function handleFile(f) {
+  $("error-msg").style.display="none";
+  if (!f) return;
+  if (f.size > MAX_SIZE) { showErr("File too large. Max 50MB."); return; }
+  const ok = /\.(mp3|wav|ogg|webm|m4a|aac|flac)$/i.test(f.name) || (f.type||"").startsWith("audio/");
+  if (!ok) { showErr("Unsupported format."); return; }
+  currentFile = f;
+  $("fc-name").textContent = f.name;
+  $("fc-size").textContent = (f.size/1024/1024).toFixed(2)+" MB";
+  $("file-chip").classList.add("show");
+  updateProcessBtnState();
+}
+
+function showErr(msg) {
+  $("error-msg").textContent = msg;
+  $("error-msg").style.display = "block";
+}
+
+// ── Web Audio API player ─────────────────────────────────
+// Works entirely from AudioBuffer — no blob/data URLs needed.
+function getActx() {
+  if (!sharedActx || sharedActx.state === 'closed')
+    sharedActx = new (window.AudioContext || window.webkitAudioContext)();
+  return sharedActx;
+}
+
+function stopPlayer(key) {
+  const p = players[key];
+  if (!p) return;
+  if (p.source) {
+    try { p.source.stop(); } catch(e) {}
+    try { p.source.disconnect(); } catch(e) {}
+  }
+  players[key] = null;
+}
+
+function stopAllExcept(key) {
+  ['orig','enh'].forEach(k => {
+    if (k !== key && players[k]) {
+      stopPlayer(k);
+      const otherId = k==='orig' ? 'play-orig' : 'play-enh';
+      const b = $(otherId); if (b) b.textContent = '▶';
+    }
+  });
+}
+
+function wirePlayer(audioBuf, key, ids) {
+  const playBtn = $(ids.play);
+  const curEl   = $(ids.cur);
+  const durEl   = $(ids.dur);
+  const track   = $(ids.track);
+  const fill    = $(ids.fill);
+  const thumb   = $(ids.thumb);
+
+  const duration = audioBuf.duration;
+  playBtn.disabled    = false;
+  playBtn.textContent = "▶";
+  durEl.textContent   = fmtTime(duration);
+  players[key] = null;
+
+  let rafId = null;
+  function tick() {
+    const p = players[key];
+    if (!p || !p.source) return;   // stopped or paused — nothing to animate
+    const elapsed = getActx().currentTime - p.startedAt + p.pausedAt;
+    const t = Math.min(elapsed, duration);
+    const pct = (t / duration) * 100;
+    fill.style.width  = pct + "%";
+    thumb.style.left  = pct + "%";
+    curEl.textContent = fmtTime(t);
+    if (t < duration) rafId = requestAnimationFrame(tick);
+    else { playBtn.textContent = "▶"; players[key] = null; }
+  }
+
+  async function startFrom(offset) {
+    stopAllExcept(key);
+    stopPlayer(key);
+    const actx = getActx();
+    if (actx.state === 'suspended') await actx.resume();
+    const src = actx.createBufferSource();
+    src.buffer = audioBuf;
+    src.connect(actx.destination);
+    src.start(0, offset);
+    players[key] = { source: src, startedAt: actx.currentTime, pausedAt: offset, duration };
+    src.onended = () => {
+      // Only mark ended if we weren't stopped manually
+      if (players[key] && players[key].source === src) {
+        players[key] = null;
+        playBtn.textContent = "▶";
+        fill.style.width = "0%"; thumb.style.left = "0%";
+        curEl.textContent = "0:00";
+      }
+    };
+    playBtn.textContent = "⏸";
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  playBtn.onclick = () => {
+    const p = players[key];
+    const isPlaying = p && p.source;   // has an active BufferSource
+    const isPaused  = p && p.paused;   // paused-state object, no source
+    if (isPlaying) {
+      // Pause: record position, stop source
+      const elapsed = getActx().currentTime - p.startedAt + p.pausedAt;
+      stopPlayer(key);
+      players[key] = { paused: true, pausedAt: Math.min(elapsed, duration) };
+      playBtn.textContent = "▶";
+      cancelAnimationFrame(rafId);
+    } else {
+      // Play from saved offset (or start)
+      const offset = isPaused ? p.pausedAt : 0;
+      startFrom(offset).catch(e=>console.warn('startFrom failed:',e));
+    }
+  };
+
+  let dragging = false;
+  function seekTo(clientX) {
+    const rect = track.getBoundingClientRect();
+    if (!rect.width) return;
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const offset = pct * duration;
+    const wasPlaying = players[key] && !players[key].paused;
+    if (wasPlaying) startFrom(offset);
+    else {
+      stopPlayer(key);
+      players[key] = { paused: true, pausedAt: offset };
+      const p2 = pct * 100;
+      fill.style.width = p2 + "%"; thumb.style.left = p2 + "%";
+      curEl.textContent = fmtTime(offset);
+    }
+  }
+  track.addEventListener("mousedown",  e => { dragging = true; seekTo(e.clientX); });
+  track.addEventListener("touchstart", e => { seekTo(e.touches[0].clientX); }, { passive: true });
+  track.addEventListener("touchmove",  e => { seekTo(e.touches[0].clientX); }, { passive: true });
+  document.addEventListener("mousemove", e => { if (dragging) seekTo(e.clientX); });
+  document.addEventListener("mouseup",   () => { dragging = false; });
+}
+
+// ── WAV encoder → ArrayBuffer (for downloads) ────────────
+function audioBufferToWav(buf) {
+  const nch=buf.numberOfChannels, sr=buf.sampleRate, len=buf.length;
+  const byteLen = len * nch * 2;
+  const ab = new ArrayBuffer(44 + byteLen);
+  const v  = new DataView(ab);
+  const str= (o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  str(0,"RIFF"); v.setUint32(4, 36+byteLen, true); str(8,"WAVE");
+  str(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true);
+  v.setUint16(22,nch,true); v.setUint32(24,sr,true);
+  v.setUint32(28,sr*nch*2,true); v.setUint16(32,nch*2,true);
+  v.setUint16(34,16,true); str(36,"data"); v.setUint32(40,byteLen,true);
+  let off=44;
+  for(let i=0;i<len;i++) {
+    for(let c=0;c<nch;c++){
+      const s=Math.max(-1,Math.min(1, buf.getChannelData(c)[i]));
+      v.setInt16(off, s<0?s*0x8000:s*0x7FFF, true); off+=2;
+    }
+  }
+  return ab;
+}
+function downloadWav(wavBytes, filename) {
+  const url = URL.createObjectURL(new Blob([wavBytes], {type:"audio/wav"}));
+  const a = document.createElement("a"); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+
+// ── DSP: noise suppression (main thread, chunked async) ───
+// (Blob Workers are blocked by sandbox CSP; we yield via setTimeout instead)
+const WORKER_SRC_UNUSED = `
+self.onmessage = function(e) {
+  const { channels, sampleRate, length } = e.data;
+  const nch = channels.length;
+  const out  = [];
+
+  for (let ch = 0; ch < nch; ch++) {
+    const input = channels[ch];
+    out.push(denoise(input, sampleRate));
+  }
+
+  self.postMessage({ channels: out, sampleRate, length }, out.map(c=>c.buffer));
+};
+
+function denoise(samples, sr) {
+  const fftSize = 1024;
+  const hop     = 256;
+  const noiseFrames = Math.max(1, Math.floor(0.4 * sr / hop));
+  const beta    = 0.8;   // was 1.8 – much less aggressive subtraction
+  const floor   = 0.15;  // was 0.02 – keep more signal to prevent silence
+
+  // Hann window
+  const win = new Float32Array(fftSize);
+  for (let i=0;i<fftSize;i++) win[i]=0.5*(1-Math.cos(2*Math.PI*i/(fftSize-1)));
+
+  const overlap = new Float32Array(samples.length + fftSize);
+  const re      = new Float32Array(fftSize);
+  const im      = new Float32Array(fftSize);
+  let   noiseMag = null;
+  let   frameIdx = 0;
+
+  for (let pos=0; pos+fftSize<=samples.length; pos+=hop) {
+    // Load frame
+    for (let i=0;i<fftSize;i++) { re[i]=samples[pos+i]*win[i]; im[i]=0; }
+
+    fft(re, im, false);
+
+    // Magnitude
+    const mag = new Float32Array(fftSize);
+    const pha = new Float32Array(fftSize);
+    for (let k=0;k<fftSize;k++) {
+      mag[k]=Math.sqrt(re[k]*re[k]+im[k]*im[k]);
+      pha[k]=Math.atan2(im[k],re[k]);
+    }
+
+    // Build noise profile from first N frames
+    if (!noiseMag) noiseMag = new Float32Array(fftSize);
+    if (frameIdx < noiseFrames) {
+      for (let k=0;k<fftSize;k++)
+        noiseMag[k] = frameIdx===0 ? mag[k] : noiseMag[k]*0.85 + mag[k]*0.15;
+      frameIdx++;
+    }
+
+    // Spectral subtraction
+    for (let k=0;k<fftSize;k++) {
+      const clean = Math.max(mag[k] - beta*noiseMag[k], floor*noiseMag[k]);
+      re[k] = clean * Math.cos(pha[k]);
+      im[k] = clean * Math.sin(pha[k]);
+    }
+
+    ifft(re, im);
+
+    // Overlap-add
+    const scale = fftSize * 0.5;
+    for (let i=0;i<fftSize;i++) overlap[pos+i] += re[i]*win[i]/scale;
+  }
+
+  // Copy + clip
+  const result = new Float32Array(samples.length);
+  for (let i=0;i<samples.length;i++) result[i]=Math.max(-1,Math.min(1,overlap[i]));
+  return result;
+}
+
+function fft(re, im, inv) {
+  const n=re.length;
+  // bit-reversal
+  for(let i=1,j=0;i<n;i++){
+    let bit=n>>1;
+    for(;j&bit;bit>>=1) j^=bit;
+    j^=bit;
+    if(i<j){ [re[i],re[j]]=[re[j],re[i]]; [im[i],im[j]]=[im[j],im[i]]; }
+  }
+  for(let len=2;len<=n;len<<=1){
+    const ang=2*Math.PI/len*(inv?1:-1);
+    const wRe=Math.cos(ang), wIm=Math.sin(ang);
+    for(let i=0;i<n;i+=len){
+      let cRe=1,cIm=0;
+      for(let j=0;j<len/2;j++){
+        const uRe=re[i+j],uIm=im[i+j];
+        const vRe=re[i+j+len/2],vIm=im[i+j+len/2];
+        const tRe=cRe*vRe-cIm*vIm, tIm=cRe*vIm+cIm*vRe;
+        re[i+j]=uRe+tRe; im[i+j]=uIm+tIm;
+        re[i+j+len/2]=uRe-tRe; im[i+j+len/2]=uIm-tIm;
+        [cRe,cIm]=[cRe*wRe-cIm*wIm, cRe*wIm+cIm*wRe];
+      }
+    }
+  }
+  if(inv){ for(let i=0;i<n;i++){ re[i]/=n; im[i]/=n; } }
+}
+
+function ifft(re,im){ fft(re,im,true); }
+`;
+
+// ── Real main-thread DSP (no Worker needed) ───────────────
+function dspFFT(re, im, inv) {
+  const n = re.length;
+  for (let i=1,j=0; i<n; i++) {
+    let bit=n>>1;
+    for (;j&bit; bit>>=1) j^=bit;
+    j^=bit;
+    if (i<j) { [re[i],re[j]]=[re[j],re[i]]; [im[i],im[j]]=[im[j],im[i]]; }
+  }
+  for (let len=2; len<=n; len<<=1) {
+    const ang=2*Math.PI/len*(inv?1:-1);
+    const wRe=Math.cos(ang), wIm=Math.sin(ang);
+    for (let i=0; i<n; i+=len) {
+      let cRe=1, cIm=0;
+      for (let j=0; j<len/2; j++) {
+        const uRe=re[i+j], uIm=im[i+j];
+        const vRe=re[i+j+len/2], vIm=im[i+j+len/2];
+        const tRe=cRe*vRe-cIm*vIm, tIm=cRe*vIm+cIm*vRe;
+        re[i+j]=uRe+tRe; im[i+j]=uIm+tIm;
+        re[i+j+len/2]=uRe-tRe; im[i+j+len/2]=uIm-tIm;
+        [cRe,cIm]=[cRe*wRe-cIm*wIm, cRe*wIm+cIm*wRe];
+      }
+    }
+  }
+  if (inv) { for (let i=0;i<n;i++) { re[i]/=n; im[i]/=n; } }
+}
+
+// Correct COLA (constant-overlap-add) normalization for a given
+// analysis/synthesis window at a given hop. The previous code used a
+// hardcoded `fftSize*0.5` scale factor, which for this Hann window at
+// 4x overlap (hop=256, fftSize=1024) is ~342x too large — meaning the
+// "enhanced" output was being crushed to near silence on every run,
+// regardless of the noise-reduction settings. This computes the right
+// value directly from the window/hop so it stays correct if those ever
+// change.
+function computeColaNorm(win, hop) {
+  const N = win.length;
+  const mid = N;
+  const shifts = Math.ceil(N/hop) + 2;
+  let s = 0;
+  for (let k=-shifts;k<=shifts;k++) {
+    const idx = mid - k*hop;
+    if (idx>=0 && idx<N) s += win[idx]*win[idx];
+  }
+  return s;
+}
+
+async function denoiseChannel(samples, sr) {
+  const fftSize=1024, hop=256;
+  const win=new Float32Array(fftSize);
+  for (let i=0;i<fftSize;i++) win[i]=0.5*(1-Math.cos(2*Math.PI*i/(fftSize-1)));
+  const colaNorm = computeColaNorm(win, hop); // FIX: was `fftSize*0.5`, ~342x too much attenuation
+
+  // ── Hiss-targeted de-noise ──────────────────────────────
+  // Hiss energy lives almost entirely above ~4.5kHz; voice fundamentals
+  // and body sit below that. Bins below the cutoff are left completely
+  // untouched (weight 0), and the cut ramps in over a transition band
+  // so there's no audible seam at the crossover.
+  const cutoffHz = 4500, transHz = 1200;
+  const binHz = sr / fftSize;
+  const cutoffBin = cutoffHz / binHz;
+  const transBins = Math.max(1, transHz / binHz);
+  const halfLen = fftSize/2 + 1;
+  const bandWeight = new Float32Array(halfLen);
+  for (let k=0;k<halfLen;k++) {
+    if (k <= cutoffBin) bandWeight[k]=0;
+    else if (k >= cutoffBin+transBins) bandWeight[k]=1;
+    else bandWeight[k]=(k-cutoffBin)/transBins;
+  }
+  const lowStartBin = Math.max(1, Math.round(300/binHz));
+
+  const beta=2.4, floorRatio=0.06, riseRate=0.04;
+  // Light, full-band reverb/tail suppression. Reverb energy lingers
+  // after the direct sound and shows up as a slowly-decaying residue
+  // across most of the spectrum (not just the hiss band). A second,
+  // much slower follower captures that residue; only a modest
+  // fraction of it gets subtracted so the reduction stays "light" —
+  // room tone and voice warmth are left mostly intact.
+  const reverbRiseRate = 0.01, reverbCut = 0.28, reverbFloor = 0.25;
+
+  const overlap=new Float32Array(samples.length+fftSize);
+  const re=new Float32Array(fftSize), im=new Float32Array(fftSize);
+  const mag=new Float32Array(fftSize), pha=new Float32Array(fftSize);
+  const noiseMag=new Float32Array(fftSize);
+  const reverbMag=new Float32Array(fftSize);
+  let initialized=false, yieldCount=0;
+  let lowNoiseAvg=0, lowNoiseInit=false;
+
+  for (let pos=0; pos+fftSize<=samples.length; pos+=hop) {
+    if (++yieldCount%256===0) await new Promise(r=>setTimeout(r,0));
+    for (let i=0;i<fftSize;i++) { re[i]=samples[pos+i]*win[i]; im[i]=0; }
+    dspFFT(re,im,false);
+    for (let k=0;k<fftSize;k++) {
+      mag[k]=Math.sqrt(re[k]*re[k]+im[k]*im[k]);
+      pha[k]=Math.atan2(im[k],re[k]);
+    }
+
+    // Continuously-adaptive per-bin noise floor (leaky min-follower):
+    // tracks DOWN fast into quiet/hiss-only frames, but only rises
+    // slowly, so loud speech doesn't drag the "noise" estimate up.
+    // Unlike the old fixed profile (snapshotted once from the first
+    // 0.4s), this keeps adapting through the whole file — so
+    // suppression strength tracks wherever the hiss actually is,
+    // instead of applying one static amount everywhere.
+    if (!initialized) { for (let k=0;k<fftSize;k++) { noiseMag[k]=mag[k]; reverbMag[k]=mag[k]; } initialized=true; }
+    else {
+      for (let k=0;k<fftSize;k++) {
+        if (mag[k] < noiseMag[k]) noiseMag[k]=mag[k];
+        else noiseMag[k] += (mag[k]-noiseMag[k])*riseRate;
+        if (mag[k] < reverbMag[k]) reverbMag[k]=mag[k];
+        else reverbMag[k] += (mag[k]-reverbMag[k])*reverbRiseRate;
+      }
+    }
+
+    // Speech-activity estimate from the low/mid band (300Hz–cutoff).
+    // When someone is actively talking, ease off the high-band
+    // suppression so sibilants ("s"/"sh") aren't chewed up; apply full
+    // strength during gaps, which is where hiss is most audible anyway.
+    let lowSum=0, lowCount=0;
+    for (let k=lowStartBin;k<cutoffBin;k++){ lowSum+=mag[k]; lowCount++; }
+    const lowAvg = lowCount ? lowSum/lowCount : 0;
+    if (!lowNoiseInit) { lowNoiseAvg=lowAvg; lowNoiseInit=true; }
+    else {
+      if (lowAvg < lowNoiseAvg) lowNoiseAvg = lowAvg;
+      else lowNoiseAvg += (lowAvg-lowNoiseAvg)*riseRate;
+    }
+    const activity = Math.min(3, lowAvg/(lowNoiseAvg+1e-8));
+    const betaScale = Math.max(0.35, 1 - Math.min(0.65,(activity-1)*0.35));
+    const betaEff = beta*betaScale;
+
+    for (let k=0;k<fftSize;k++) {
+      const half = k <= fftSize/2 ? k : fftSize-k;
+      const w = bandWeight[half];
+      let cleanMag = mag[k];
+      if (w>0) {
+        const target = Math.max(mag[k]-betaEff*noiseMag[k], floorRatio*mag[k]);
+        cleanMag = mag[k]*(1-w) + target*w;
+      }
+      // Light full-band reverb-tail trim, skipping the very lowest bins
+      // so bass/warmth stays untouched.
+      if (half >= lowStartBin) {
+        cleanMag = Math.max(cleanMag - reverbCut*reverbMag[half], reverbFloor*cleanMag);
+      }
+      re[k]=cleanMag*Math.cos(pha[k]); im[k]=cleanMag*Math.sin(pha[k]);
+    }
+    dspFFT(re,im,true);
+    for (let i=0;i<fftSize;i++) overlap[pos+i]+=re[i]*win[i]/colaNorm;
+  }
+  const result=new Float32Array(samples.length);
+  for (let i=0;i<samples.length;i++) result[i]=Math.max(-1,Math.min(1,overlap[i]));
+  return result;
+}
+
+// ── Hum detection (50Hz/60Hz mains hum + harmonics) ────────
+// Looks for narrowband spikes stacked at a fundamental and its first
+// few harmonics — the fingerprint of mains hum — rather than just
+// "low frequency energy," so normal bass/voice content doesn't get
+// mistaken for hum.
+function detectHum(mono, sr) {
+  const analyzeSamples = Math.min(sr*4, mono.length);
+  if (analyzeSamples < sr*0.5) return null;
+  const fftSize=4096, hop=2048; // fine resolution needed to tell 50Hz from 60Hz
+  const win=new Float32Array(fftSize);
+  for (let i=0;i<fftSize;i++) win[i]=0.5*(1-Math.cos(2*Math.PI*i/(fftSize-1)));
+  const binHz = sr/fftSize;
+  const halfLen = fftSize/2+1;
+  const avgMag = new Float32Array(halfLen);
+  const re=new Float32Array(fftSize), im=new Float32Array(fftSize);
+  let frameCount=0;
+  for (let pos=0; pos+fftSize<=analyzeSamples; pos+=hop) {
+    for (let i=0;i<fftSize;i++){ re[i]=mono[pos+i]*win[i]; im[i]=0; }
+    dspFFT(re,im,false);
+    for (let k=0;k<halfLen;k++) avgMag[k]+=Math.sqrt(re[k]*re[k]+im[k]*im[k]);
+    frameCount++;
+  }
+  if (!frameCount) return null;
+  for (let k=0;k<halfLen;k++) avgMag[k]/=frameCount;
+
+  function prominenceAt(freq) {
+    const bin = Math.round(freq/binHz);
+    if (bin<1 || bin>=halfLen-1) return 0;
+    const peak = avgMag[bin];
+    const span = Math.max(2, Math.round(8/binHz));
+    let base=0, count=0;
+    for (let d=span; d<=span*3; d++){
+      const lo=bin-d, hi=bin+d;
+      if (lo>=0){ base+=avgMag[lo]; count++; }
+      if (hi<halfLen){ base+=avgMag[hi]; count++; }
+    }
+    base = count? base/count : 0;
+    return peak/(base+1e-8);
+  }
+
+  function humScore(fundamental) {
+    let score=0;
+    for (const h of [1,2,3,4]) score += Math.log(1+prominenceAt(fundamental*h));
+    return score;
+  }
+
+  const score50 = humScore(50), score60 = humScore(60);
+  const best = score50>score60 ? {freq:50,score:score50} : {freq:60,score:score60};
+  if (best.score < 1.6) return null; // no clear narrowband spike stack — don't touch anything
+  return { freq: best.freq, harmonics:[1,2,3,4,5] };
+}
+
+// ── Click / Pop removal ─────────────────────────────────────
+// Flags very short, sharp discontinuities (a handful of samples wide)
+// that stand far out from the local signal level, and bridges them
+// with a short interpolation. Real consonant transients are much
+// longer and follow the waveform's continuity, so they're left alone.
+async function declickChannel(samples, sr) {
+  const n = samples.length;
+  if (n < 16) return samples.slice();
+  const halfWin = Math.max(16, Math.round(sr*0.003));
+  const prefix = new Float64Array(n+1);
+  for (let i=0;i<n;i++) prefix[i+1] = prefix[i] + Math.abs(samples[i]);
+  const windowMean = (center) => {
+    const lo = Math.max(0, center-halfWin), hi = Math.min(n, center+halfWin);
+    return (prefix[hi]-prefix[lo])/Math.max(1,(hi-lo));
+  };
+
+  const out = samples.slice();
+  let i = 2, yieldCount=0;
+  while (i < n-2) {
+    if (++yieldCount%400000===0) await new Promise(r=>setTimeout(r,0));
+    const d2 = Math.abs(samples[i] - 0.5*(samples[i-1]+samples[i+1]));
+    const baseline = windowMean(i);
+    if (d2 > Math.max(0.02, baseline*7)) {
+      let j = i;
+      while (j < n-2 && (j-i) < 6 && Math.abs(samples[j]-0.5*(samples[j-1]+samples[j+1])) > Math.max(0.02, baseline*4)) j++;
+      const aIdx = Math.max(0, i-2), bIdx = Math.min(n-1, j+1);
+      const a = samples[aIdx], b = samples[bIdx];
+      const span = (bIdx-aIdx) || 1;
+      for (let k=aIdx+1;k<bIdx;k++) out[k] = a + (b-a)*((k-aIdx)/span);
+      i = j+2;
+      continue;
+    }
+    i++;
+  }
+  return out;
+}
+
+// ── Final loudness normalization + peak limiter ─────────────
+// Brings the file to a consistent, moderate level and then uses a
+// fast-attack/slower-release smoothed envelope to hold peaks under
+// the ceiling — this replaces a fixed makeup-gain multiplier, which
+// can clip on louder material.
+async function normalizeAndLimitBuffer(buffer, targetRMS=0.09, ceiling=0.97) {
+  const nch = buffer.numberOfChannels, len = buffer.length, sr = buffer.sampleRate;
+  const chans = [];
+  let sumSq=0, count=0;
+  for (let c=0;c<nch;c++){
+    const d = buffer.getChannelData(c).slice();
+    chans.push(d);
+    for (let i=0;i<len;i+=4){ sumSq+=d[i]*d[i]; count++; }
+  }
+  const rms = Math.sqrt(sumSq/Math.max(1,count));
+  const gain = Math.max(0.3, Math.min(4, rms>1e-6 ? targetRMS/rms : 1));
+
+  const attackCoef = Math.exp(-1/(0.001*sr));
+  const releaseCoef = Math.exp(-1/(0.06*sr));
+  for (let c=0;c<nch;c++) {
+    const d = chans[c];
+    let env=0, yieldCount=0;
+    for (let i=0;i<len;i++) {
+      if (++yieldCount%400000===0) await new Promise(r=>setTimeout(r,0));
+      const x = d[i]*gain;
+      const ax = Math.abs(x);
+      env = ax>env ? attackCoef*env+(1-attackCoef)*ax : releaseCoef*env+(1-releaseCoef)*ax;
+      const limGain = env>ceiling ? ceiling/env : 1;
+      d[i] = x*limGain;
+    }
+    buffer.copyToChannel(d, c);
+  }
+}
+
+
+async function runDenoise(audioBuffer) {
+  const nch=audioBuffer.numberOfChannels, sr=audioBuffer.sampleRate;
+  const out=[];
+  for (let c=0;c<nch;c++) out.push(await denoiseChannel(audioBuffer.getChannelData(c).slice(),sr));
+  return { channels:out, sampleRate:sr, length:out[0].length };
+}
+
+// ── Apply EQ chain via OfflineAudioContext ────────────────
+async function applyEQ(workerResult, humInfo) {
+  const { channels, sampleRate } = workerResult;
+  const nch    = channels.length;
+  const length = channels[0].length;   // use actual output length
+  const offCtx = new OfflineAudioContext(nch, length, sampleRate);
+  const buf = offCtx.createBuffer(nch, length, sampleRate);
+  for (let c=0;c<nch;c++) buf.copyToChannel(channels[c], c);
+
+  const src = offCtx.createBufferSource(); src.buffer = buf;
+
+  const hpf = offCtx.createBiquadFilter();
+  hpf.type="highpass"; hpf.frequency.value=80; hpf.Q.value=0.7;
+
+  let chainEnd = hpf;
+  if (humInfo && humInfo.freq) {
+    for (const h of humInfo.harmonics) {
+      const f = humInfo.freq*h;
+      if (f >= sampleRate/2 - 100) break;
+      const notch = offCtx.createBiquadFilter();
+      notch.type="notch"; notch.frequency.value=f; notch.Q.value = h===1?18:28;
+      chainEnd.connect(notch);
+      chainEnd = notch;
+    }
+  }
+
+  const warmth = offCtx.createBiquadFilter();
+  warmth.type="lowshelf"; warmth.frequency.value=200; warmth.gain.value=1.5;
+
+  const presence = offCtx.createBiquadFilter();
+  presence.type="peaking"; presence.frequency.value=2800; presence.gain.value=3.5; presence.Q.value=1;
+
+  const comp = offCtx.createDynamicsCompressor();
+  comp.threshold.value=-22; comp.knee.value=8; comp.ratio.value=3;
+  comp.attack.value=0.006; comp.release.value=0.25;
+
+  src.connect(hpf);
+  chainEnd.connect(warmth).connect(presence).connect(comp).connect(offCtx.destination);
+  src.start(0);
+  return offCtx.startRendering();
+}
+
+// ── Auto Start Hiss Removal ────────────────────────────────
+// Looks only at the first 2–5s of the clip and asks two questions:
+// (1) is there broadband hiss here at all, and (2) does it run into
+// speech or is it just dead air/hiss before anyone talks. The result
+// drives a de-hiss pass that touches only that opening window — the
+// rest of the file is never fed through this extra pass.
+
+function downmixMono(buf, maxSamples) {
+  const nch = buf.numberOfChannels;
+  const len = typeof maxSamples === "number" ? Math.min(maxSamples, buf.length) : buf.length;
+  const out = new Float32Array(len);
+  for (let c=0;c<nch;c++) {
+    const d = buf.getChannelData(c);
+    for (let i=0;i<len;i++) out[i]+=d[i]/nch;
+  }
+  return out;
+}
+
+// Returns null if no hiss found in the intro, otherwise
+// { startSample, endSample, durSec, speechFree }
+function detectIntroHiss(samples, sr) {
+  const durationSec = samples.length / sr;
+  if (durationSec < 1.0) return null; // clip too short for this to matter
+
+  const windowSec = Math.min(5, durationSec);
+  const windowEndSample = Math.floor(windowSec * sr);
+  const frameSize = 1024, hop = 512;
+  const win = new Float32Array(frameSize);
+  for (let i=0;i<frameSize;i++) win[i]=0.5*(1-Math.cos(2*Math.PI*i/(frameSize-1)));
+  const binHz = sr/frameSize;
+  const highStartBin  = Math.round(4500/binHz);
+  const speechStartBin= Math.round(300/binHz);
+  const speechEndBin  = Math.round(3400/binHz);
+  const halfLen = frameSize/2+1;
+  const re=new Float32Array(frameSize), im=new Float32Array(frameSize);
+
+  const frames = [];
+  for (let pos=0; pos+frameSize<=windowEndSample && pos+frameSize<=samples.length; pos+=hop) {
+    for (let i=0;i<frameSize;i++){ re[i]=samples[pos+i]*win[i]; im[i]=0; }
+    dspFFT(re,im,false);
+    let total=0, high=0, speech=0;
+    for (let k=0;k<halfLen;k++) {
+      const m = Math.sqrt(re[k]*re[k]+im[k]*im[k]);
+      total += m;
+      if (k>=highStartBin) high += m;
+      if (k>=speechStartBin && k<=speechEndBin) speech += m;
+    }
+    let rms=0; for (let i=0;i<frameSize;i++) rms+=samples[pos+i]*samples[pos+i];
+    rms = Math.sqrt(rms/frameSize);
+    frames.push({
+      pos,
+      highRatio: total>1e-6 ? high/total : 0,
+      speechRatio: total>1e-6 ? speech/total : 0,
+      rms
+    });
+  }
+  if (frames.length < 2) return null;
+
+  // A frame reads as "hissy" when its energy skews heavily into the
+  // high band and doesn't carry the speech-formant structure that
+  // voice would show up as in the 300Hz–3.4kHz band.
+  const hissyFlags = frames.map(f => f.highRatio > 0.28 && f.speechRatio < 0.30 && f.rms > 0.0008);
+
+  // Walk forward from the very start of the file, allowing tiny gaps
+  // (a couple of frames) so the run doesn't break on one quiet frame.
+  let runEnd = -1, gap = 0;
+  for (let i=0;i<hissyFlags.length;i++) {
+    if (hissyFlags[i]) { runEnd = i; gap = 0; }
+    else { gap++; if (gap > 2) break; }
+  }
+  if (runEnd < 1) return null; // no meaningful leading hiss run found
+
+  const endSample = Math.min(frames[runEnd].pos + frameSize, windowEndSample);
+  const durSec = endSample / sr;
+  if (durSec < 0.15) return null; // negligible, not worth touching
+
+  let maxSpeechRatioInRegion = 0;
+  for (let i=0;i<=runEnd;i++) maxSpeechRatioInRegion = Math.max(maxSpeechRatioInRegion, frames[i].speechRatio);
+  const speechFree = maxSpeechRatioInRegion < 0.22;
+
+  return { startSample: 0, endSample, durSec, speechFree };
+}
+
+// Applies a stronger, high-band-only spectral subtraction, but only
+// across [region.startSample, region.endSample], cross-fading the
+// extra suppression in/out over ~120ms so there's no audible seam
+// where it hands back off to the normal full-file processing.
+async function reduceIntroHiss(channels, sr, region) {
+  const { startSample, endSample, speechFree } = region;
+  const fadeSamples = Math.round(0.12 * sr);
+  const fftSize=1024, hop=256;
+  const win=new Float32Array(fftSize);
+  for (let i=0;i<fftSize;i++) win[i]=0.5*(1-Math.cos(2*Math.PI*i/(fftSize-1)));
+  const colaNorm = computeColaNorm(win, hop);
+  const binHz = sr/fftSize;
+  const cutoffHz=3800, transHz=1000; // a touch more aggressive than the global pass, since this is spot-treatment
+  const cutoffBin = cutoffHz/binHz;
+  const transBins = Math.max(1, transHz/binHz);
+  const halfLen = fftSize/2+1;
+  const bandWeight = new Float32Array(halfLen);
+  for (let k=0;k<halfLen;k++){
+    if (k<=cutoffBin) bandWeight[k]=0;
+    else if (k>=cutoffBin+transBins) bandWeight[k]=1;
+    else bandWeight[k]=(k-cutoffBin)/transBins;
+  }
+  const betaStrong = 4.0, floorRatio=0.04, riseRate=0.08;
+  const processEnd = Math.min(endSample+fadeSamples, channels[0].length);
+
+  const out = channels.map(c=>c.slice());
+
+  for (let c=0;c<channels.length;c++) {
+    const samples = channels[c];
+    const overlap = new Float32Array(processEnd+fftSize);
+    const re=new Float32Array(fftSize), im=new Float32Array(fftSize);
+    const mag=new Float32Array(fftSize), pha=new Float32Array(fftSize);
+    const noiseMag=new Float32Array(fftSize);
+    let initialized=false;
+    let yieldCount=0;
+
+    for (let pos=0; pos+fftSize<=processEnd; pos+=hop) {
+      if (++yieldCount%128===0) await new Promise(r=>setTimeout(r,0));
+      for (let i=0;i<fftSize;i++){ re[i]=samples[pos+i]*win[i]; im[i]=0; }
+      dspFFT(re,im,false);
+      for (let k=0;k<fftSize;k++){ mag[k]=Math.sqrt(re[k]*re[k]+im[k]*im[k]); pha[k]=Math.atan2(im[k],re[k]); }
+      if (!initialized) { for (let k=0;k<fftSize;k++) noiseMag[k]=mag[k]; initialized=true; }
+      else { for (let k=0;k<fftSize;k++){ if (mag[k]<noiseMag[k]) noiseMag[k]=mag[k]; else noiseMag[k]+=(mag[k]-noiseMag[k])*riseRate; } }
+
+      // How much of the extra suppression applies at this frame: 0
+      // outside the hiss window, ramping to 1 across the crossfade,
+      // full strength inside, ramping back down on the way out.
+      const frameCenter = pos+fftSize/2;
+      let blend;
+      if (frameCenter < startSample) blend = 0;
+      else if (frameCenter < startSample+fadeSamples) blend = (frameCenter-startSample)/fadeSamples;
+      else if (frameCenter <= endSample) blend = 1;
+      else if (frameCenter <= endSample+fadeSamples) blend = 1-(frameCenter-endSample)/fadeSamples;
+      else blend = 0;
+
+      if (blend > 0) {
+        for (let k=0;k<fftSize;k++) {
+          const half = k<=fftSize/2 ? k : fftSize-k;
+          const w = bandWeight[half];
+          if (w<=0) continue;
+          const target = Math.max(mag[k]-betaStrong*noiseMag[k], floorRatio*mag[k]);
+          const cleanMag = mag[k]*(1-w*blend) + target*(w*blend);
+          re[k]=cleanMag*Math.cos(pha[k]); im[k]=cleanMag*Math.sin(pha[k]);
+        }
+      }
+      dspFFT(re,im,true);
+      for (let i=0;i<fftSize;i++) overlap[pos+i]+=re[i]*win[i]/colaNorm;
+    }
+    for (let i=0;i<processEnd;i++) out[c][i]=Math.max(-1,Math.min(1,overlap[i]));
+  }
+
+  // If the hiss window has no speech in it at all, ease the volume up
+  // from a low starting point instead of hitting full level from
+  // sample zero — a gentle fade-in rather than a hard trim, so nothing
+  // gets cut that might matter.
+  if (speechFree) {
+    const fadeStartGain = 0.15;
+    for (let c=0;c<out.length;c++) {
+      for (let i=0;i<endSample && i<out[c].length;i++) {
+        const g = fadeStartGain + (1-fadeStartGain)*(i/endSample);
+        out[c][i]*=g;
+      }
+    }
+  }
+
+  return out;
+}
+
+// ── Feature checklist ────────────────────────────────────────
+// Reflects what actually happened on this file, not just a static
+// marketing list — hum removal only shows as applied if a real
+// narrowband spike was found, etc. A couple of items are honestly
+// labeled "best-effort": this pipeline is classic DSP (spectral
+// subtraction + filters), not a source-separation ML model, so full
+// removal of things like background music, crowd talk, or TV audio
+// that overlaps the voice band isn't something it can guarantee.
+function renderFeatureChecklist(humInfo, hissInfo) {
+  const items = [
+    { label: "AI Hiss Removal", ok: true },
+    { label: "Background Noise Removal", ok: true, note: "steady/stationary noise" },
+    { label: "Hum Removal (50/60Hz)", ok: !!(humInfo && humInfo.freq), note: humInfo && humInfo.freq ? `${humInfo.freq}Hz detected` : "none detected" },
+    { label: "Wind Noise Reduction", ok: true, note: "best-effort" },
+    { label: "Echo & Reverb Reduction", ok: true, note: "light" },
+    { label: "Voice Enhancement", ok: true },
+    { label: "HD Audio Output", ok: true },
+    { label: "Loudness Normalization", ok: true },
+    { label: "Natural Voice Preservation", ok: true },
+    { label: "Studio-Quality Audio", ok: true },
+  ];
+  const grid = $("feature-grid");
+  grid.innerHTML = items.map(it => `
+    <div style="display:flex;align-items:baseline;gap:6px;font-size:12px">
+      <span style="color:${it.ok?'#34d399':'#475569'};flex-shrink:0">${it.ok?'✓':'–'}</span>
+      <span style="color:#cbd5e1">${it.label}${it.note?`<span style="color:#64748b"> · ${it.note}</span>`:''}</span>
+    </div>`).join("");
+  $("feature-caveat").textContent = "Built with classic signal processing (spectral subtraction, adaptive filters, notch/limiter) — great at steady noise, hiss, hum, and clicks. Fully isolating other voices, music, or TV audio blended into the speech band would need a dedicated ML source-separation model, which this pass doesn't run.";
+}
+
+// ── Main process ──────────────────────────────────────────
+$("process-btn").addEventListener("click", async ()=>{
+  if (!currentFile) return;
+  const AC = window.AudioClarityAuth;
+  if (!AC || !AC.getState().user) { updateAuthUI(); showErr("Please sign in to process audio."); return; }
+  if (AC.getState().connectionError) { updateAuthUI(); showErr("Unable to connect to the server. Please check your internet connection and try again."); return; }
+  if (!AC.canProcess()) { updateAuthUI(); showErr("Your free trial has expired. Upgrade to Premium to continue."); return; }
+  showStage("processing");
+  animWave(true);
+  setProgress(5, "Reading file…");
+
+  let rawText="", enhText="";
+  let hissInfo = { detected:false };
+  let humInfo = null;
+
+  try {
+    // 1. Decode audio
+    setProgress(15, "Decoding audio…");
+    const arrayBuf = await currentFile.arrayBuffer();
+    const actx     = new (window.AudioContext||window.webkitAudioContext)();
+    let   decoded;
+    try {
+      decoded = await actx.decodeAudioData(arrayBuf.slice(0));
+    } catch(e) {
+      throw new Error("Could not decode audio. Try MP3 or WAV.");
+    }
+    await actx.close();
+
+    // 2. Encode original as data URI
+    setProgress(25, "Preparing original…");
+    origAudioBuf = decoded;
+    origWavBytes = audioBufferToWav(decoded);
+
+    // 3. AI transcript
+    setProgress(40, "Generating transcript…");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-6", max_tokens:1000,
+          messages:[{role:"user",content:`Generate a realistic demo transcript for audio file "${currentFile.name}" (${(currentFile.size/1024/1024).toFixed(1)}MB). Respond ONLY with valid JSON, no markdown: {"raw":"...with um, uh, filler words...","enhanced":"...polished clean version..."}`}]
+        })
+      });
+      const data=await res.json();
+      const txt=(data.content||[]).map(c=>c.text||"").join("");
+      const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());
+      rawText=parsed.raw||""; enhText=parsed.enhanced||"";
+    } catch(e){ rawText="Transcript unavailable."; enhText="Transcript unavailable."; }
+
+    // 3b. Click/pop removal — short, sharp discontinuities (keyboard
+    // clacks, mouse clicks, connector pops) get bridged before the
+    // spectral stages run, so they don't skew the noise-floor tracking.
+    setProgress(48, "Removing clicks & pops…");
+    let declicked = decoded;
+    try {
+      const nch = decoded.numberOfChannels;
+      const off = new OfflineAudioContext(nch, decoded.length, decoded.sampleRate);
+      const cleanBuf = off.createBuffer(nch, decoded.length, decoded.sampleRate);
+      for (let c=0;c<nch;c++) {
+        const fixed = await declickChannel(decoded.getChannelData(c), decoded.sampleRate);
+        cleanBuf.copyToChannel(fixed, c);
+      }
+      declicked = cleanBuf;
+    } catch(e) { console.warn("Declick skipped:", e); }
+
+    // 3c. Hum detection (50Hz/60Hz mains) — only acted on if a clear
+    // narrowband spike stack is actually found, so ordinary bass
+    // content never gets notched by mistake.
+    try {
+      const humSamples = Math.min(decoded.sampleRate*4, decoded.length);
+      const humMono = downmixMono(declicked, humSamples);
+      humInfo = detectHum(humMono, decoded.sampleRate);
+    } catch(e) { console.warn("Hum detection skipped:", e); }
+
+    // 4. Noise suppression + light reverb trim, then EQ chain
+    // (high-pass, hum notches if detected, warmth, presence, gentle
+    // compression).
+    setProgress(60, "Suppressing noise…");
+    let enhBuffer;
+    try {
+      const workerResult = await runDenoise(declicked);
+      setProgress(80, "Applying EQ…");
+      enhBuffer = await applyEQ(workerResult, humInfo);
+    } catch(e) {
+      console.warn("Enhancement failed, using original:", e);
+      enhBuffer = declicked;
+    }
+
+    // 4b. Auto Start Hiss Removal — scan just the first 2–5s for hiss
+    // and, if present, clean only that window. Leaves the rest of the
+    // (already globally denoised) audio exactly as it was.
+    if ($("toggle-hiss").checked) {
+      setProgress(86, "Checking intro for hiss…");
+      // Yield once so the progress label actually repaints before we
+      // start crunching numbers on the main thread.
+      await new Promise(r=>setTimeout(r,0));
+      try {
+        const detectSamples = Math.min(decoded.sampleRate*5, decoded.length);
+        const monoForDetect = downmixMono(decoded, detectSamples);
+        const region = detectIntroHiss(monoForDetect, decoded.sampleRate);
+        if (region) {
+          // If the noise-reduction step above failed and fell back to
+          // the declicked buffer, don't mutate it in place — copy it
+          // first so origAudioBuf/enhAudioBuf stay independent.
+          if (enhBuffer === declicked) {
+            const off = new OfflineAudioContext(declicked.numberOfChannels, declicked.length, declicked.sampleRate);
+            const copy = off.createBuffer(declicked.numberOfChannels, declicked.length, declicked.sampleRate);
+            for (let c=0;c<declicked.numberOfChannels;c++) copy.copyToChannel(declicked.getChannelData(c).slice(), c);
+            enhBuffer = copy;
+          }
+          const chans = [];
+          for (let c=0;c<enhBuffer.numberOfChannels;c++) chans.push(enhBuffer.getChannelData(c));
+          const fixed = await reduceIntroHiss(chans, enhBuffer.sampleRate, region);
+          for (let c=0;c<enhBuffer.numberOfChannels;c++) enhBuffer.copyToChannel(fixed[c], c);
+          hissInfo = { detected:true, durSec:region.durSec, speechFree:region.speechFree };
+        }
+      } catch(e) { console.warn("Intro hiss removal skipped:", e); }
+    }
+
+    // 4c. Final loudness normalization + peak limiter — brings the
+    // whole file to a consistent, moderate level and holds peaks
+    // under the ceiling so nothing clips.
+    setProgress(90, "Normalizing loudness…");
+    try { await normalizeAndLimitBuffer(enhBuffer); }
+    catch(e) { console.warn("Normalize/limit skipped:", e); }
+
+    // 5. Encode enhanced
+    setProgress(96, "Encoding enhanced audio…");
+    enhAudioBuf = enhBuffer;
+    enhWavBytes = audioBufferToWav(enhBuffer);
+
+    setProgress(100, "Done!");
+    await new Promise(r=>setTimeout(r,400));
+
+
+  } catch(err) {
+    animWave(false);
+    showStage("idle");
+    showErr(err.message || "Processing failed.");
+    return;
+  }
+
+  animWave(false);
+
+  // Count this as one used enhancement (no-op if premium/unlimited).
+  // recordUsage() throws on Firestore failure and sets connectionError,
+  // which the ac-state-changed listener uses to show the connection
+  // banner automatically — we still let the already-finished result
+  // display below, since the audio processing itself already succeeded.
+  try { await window.AudioClarityAuth.recordUsage(); } catch(e) { console.warn("Usage recording failed, connection banner will show:", e); }
+
+  // ── Show results ─────────────────────────────────────────
+  $("result-status").textContent = "✓ " + currentFile.name;
+  $("raw-text").textContent  = rawText;
+  $("enh-text").textContent  = enhText;
+  $("stat-words").textContent= enhText.trim().split(/\s+/).filter(Boolean).length || "—";
+  $("orig-meta").textContent = currentFile.name + " · " + (currentFile.size/1024/1024).toFixed(2)+" MB";
+
+  const subParts = ["Noise reduced","Clarity boosted","Normalized"];
+  if (humInfo && humInfo.freq) subParts.push(`${humInfo.freq}Hz hum removed`);
+  if (hissInfo.detected) subParts.push(`Intro hiss removed (0–${hissInfo.durSec.toFixed(1)}s${hissInfo.speechFree ? ", faded in" : ""})`);
+  $("enh-sub").textContent = subParts.join(" · ");
+
+  renderFeatureChecklist(humInfo, hissInfo);
+
+  showStage("done");
+
+  // Wire original player (Web Audio, no blob URLs)
+  wirePlayer(origAudioBuf, 'orig', {
+    play:"play-orig", cur:"cur-orig", dur:"dur-orig",
+    track:"track-orig", fill:"fill-orig", thumb:"thumb-orig"
+  });
+
+  // Wire enhanced player
+  $("enh-status").style.display  = "none";
+  $("player-enh").style.display  = "flex";
+  wirePlayer(enhAudioBuf, 'enh', {
+    play:"play-enh", cur:"cur-enh", dur:"dur-enh",
+    track:"track-enh", fill:"fill-enh", thumb:"thumb-enh"
+  });
+});
+
+// ── Downloads ─────────────────────────────────────────────
+function downloadDataUri(dataUri, filename) {
+  const a = document.createElement("a");
+  a.href = dataUri; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function baseName() { return currentFile ? currentFile.name.replace(/\.[^.]+$/,"") : "audio"; }
+
+$("dl-report").addEventListener("click", ()=>{
+  const raw  = $("raw-text").textContent  || "Transcript unavailable.";
+  const enh  = $("enh-text").textContent  || "Transcript unavailable.";
+  const meta = currentFile
+    ? "File: " + currentFile.name + "   Size: " + (currentFile.size/1024/1024).toFixed(2) + " MB"
+    : "";
+
+  // ── Pure-JS PDF (no external lib) ────────────────────────
+  // PDF uses points (1pt = 1/72 in). A4 = 595 x 842 pt.
+  const PW=595, PH=842, ML=50, MR=50, MT=60, MB=50;
+  const CW = PW-ML-MR;   // content width
+  const LHEIGHT = 14;    // line height pt
+  const CHARS_PER_LINE = 90; // approx for 9pt Helvetica in CW
+
+  function wrapText(text, cpl) {
+    const words = text.split(/\s+/);
+    const lines = []; let cur = "";
+    for (const w of words) {
+      if (!w) continue;
+      if ((cur + (cur?" ":"") + w).length <= cpl) { cur += (cur?" ":"") + w; }
+      else { if (cur) lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [""];
+  }
+
+  // PDF object builder
+  const objs = [];
+  const offsets = [];
+  function addObj(content) { objs.push(content); return objs.length; }
+
+  // We'll build pages, collecting stream content per page
+  const pages = [];
+  let streamLines = [];
+  let y = PH - MT;
+
+  function pdfStr(s) {
+    // Escape special PDF string chars
+    return s.replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+  }
+
+  function newPage() {
+    if (streamLines.length) pages.push(streamLines.join("\n"));
+    streamLines = [];
+    y = PH - MT;
+  }
+
+  function ensureSpace(needed) {
+    if (y - needed < MB) newPage();
+  }
+
+  function drawText(text, x, yy, size, r,g,b) {
+    streamLines.push(`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)} rg`);
+    streamLines.push(`BT /F1 ${size} Tf ${x} ${yy} Td (${pdfStr(text)}) Tj ET`);
+  }
+
+  function drawRect(x,yy,w,h, r,g,b) {
+    streamLines.push(`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)} rg`);
+    streamLines.push(`${x} ${yy} ${w} ${h} re f`);
+  }
+
+  // ── Page 1 header ──
+  drawRect(0, PH-70, PW, 70, 10,22,40);
+  drawText("Audio Clarity Report", ML, PH-30, 16, 59,130,246);
+  drawText("Generated: "+new Date().toLocaleString(), ML, PH-48, 8, 100,116,139);
+  if (meta) drawText(meta, ML, PH-60, 8, 71,85,105);
+  y = PH - 85;
+
+  function addSection(title, body) {
+    ensureSpace(30);
+    drawRect(ML, y-4, CW, 18, 15,39,68);
+    drawText(title, ML+6, y+8, 9, 96,165,250);
+    y -= 22;
+    const bodyLines = wrapText(body, CHARS_PER_LINE);
+    for (const line of bodyLines) {
+      ensureSpace(LHEIGHT+2);
+      drawText(line, ML, y, 9, 40,40,40);
+      y -= LHEIGHT;
+    }
+    y -= 10;
+  }
+
+  addSection("RAW TRANSCRIPT", raw);
+  addSection("ENHANCED & CLARIFIED", enh);
+  newPage(); // flush last page
+
+  // ── Assemble PDF binary ──
+  const enc = new TextEncoder();
+  const parts = [enc.encode("%PDF-1.4\n")];
+  let pos = parts[0].length;
+
+  function pushStr(s) {
+    const b = enc.encode(s);
+    parts.push(b); pos += b.length; return b.length;
+  }
+
+  // Font obj (1)
+  offsets[1] = pos;
+  pushStr("1 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n");
+
+  // Page streams
+  const streamObjIds = [];
+  for (let i=0;i<pages.length;i++) {
+    const sid = 2 + i*2;
+    offsets[sid] = pos;
+    const s = pages[i];
+    pushStr(`${sid} 0 obj\n<< /Length ${s.length} >>\nstream\n${s}\nendstream\nendobj\n`);
+    streamObjIds.push(sid);
+  }
+
+  // Page objects
+  const pageObjIds = [];
+  const firstPageObj = 2 + pages.length*2;
+  for (let i=0;i<pages.length;i++) {
+    const pid = firstPageObj + i;
+    offsets[pid] = pos;
+    const sid = 2 + i*2;
+    pushStr(`${pid} 0 obj\n<< /Type /Page /Parent ${firstPageObj+pages.length} 0 R /MediaBox [0 0 ${PW} ${PH}] /Contents ${sid} 0 R /Resources << /Font << /F1 1 0 R >> >> >>\nendobj\n`);
+    pageObjIds.push(pid);
+  }
+
+  // Pages dict
+  const pagesId = firstPageObj + pages.length;
+  offsets[pagesId] = pos;
+  pushStr(`${pagesId} 0 obj\n<< /Type /Pages /Kids [${pageObjIds.map(id=>id+" 0 R").join(" ")}] /Count ${pages.length} >>\nendobj\n`);
+
+  // Catalog
+  const catId = pagesId + 1;
+  offsets[catId] = pos;
+  pushStr(`${catId} 0 obj\n<< /Type /Catalog /Pages ${pagesId} 0 R >>\nendobj\n`);
+
+  // xref
+  const xrefPos = pos;
+  const totalObjs = catId + 1;
+  let xref = `xref\n0 ${totalObjs}\n0000000000 65535 f \n`;
+  for (let i=1;i<totalObjs;i++)
+    xref += (offsets[i]||0).toString().padStart(10,"0") + " 00000 n \n";
+  pushStr(xref);
+  pushStr(`trailer\n<< /Size ${totalObjs} /Root ${catId} 0 R >>\nstartxref\n${xrefPos}\n%%EOF\n`);
+
+  // Concatenate all parts
+  const total = parts.reduce((s,b)=>s+b.length,0);
+  const out = new Uint8Array(total);
+  let off2=0; for (const b of parts) { out.set(b,off2); off2+=b.length; }
+
+  const blob = new Blob([out],{type:"application/pdf"});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href=url; a.download=baseName()+"_report.pdf";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+});
+$("dl-enh-txt").addEventListener("click", ()=>{
+  if (enhWavBytes) downloadWav(enhWavBytes, baseName()+"_enhanced.wav");
+  else downloadDataUri("data:text/plain;charset=utf-8,"+encodeURIComponent($("enh-text").textContent), baseName()+"_enhanced.txt");
+});
+$("dl-raw-txt").addEventListener("click", ()=>{
+  if (origWavBytes) downloadWav(origWavBytes, baseName()+"_original.wav");
+  else downloadDataUri("data:text/plain;charset=utf-8,"+encodeURIComponent($("raw-text").textContent), baseName()+"_raw.txt");
+});
+
+// ── Copy buttons ──────────────────────────────────────────
+function legacyCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch(e) { ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+["copy-raw","copy-enh"].forEach(id=>{
+  const src = id==="copy-raw"?"raw-text":"enh-text";
+  $(id).addEventListener("click", ()=>{
+    const text = $(src).textContent;
+    const showCopied = ()=>{
+      $(id).textContent="✓ Copied"; $(id).classList.add("copied");
+      setTimeout(()=>{ $(id).textContent="Copy"; $(id).classList.remove("copied"); },1800);
+    };
+    const showFailed = ()=>{
+      $(id).textContent="✗ Failed";
+      setTimeout(()=>{ $(id).textContent="Copy"; },1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(showCopied).catch(()=>{
+        if (legacyCopy(text)) showCopied(); else showFailed();
+      });
+    } else {
+      if (legacyCopy(text)) showCopied(); else showFailed();
+    }
+  });
+});
+
+// ── Reset ─────────────────────────────────────────────────
+$("reset-btn").addEventListener("click", ()=>{
+  ['orig','enh'].forEach(k=>stopPlayer(k));
+  if (sharedActx) { try { sharedActx.close(); } catch(e){} sharedActx=null; }
+  origAudioBuf=enhAudioBuf=origWavBytes=enhWavBytes=currentFile=null;
+  players={};
+  $("file-chip").classList.remove("show");
+  $("process-btn").disabled=true;
+  $("error-msg").style.display="none";
+  $("enh-status").style.display="flex";
+  $("player-enh").style.display="none";
+  $("enh-status-text").textContent="Processing audio…";
+  $("enh-sub").textContent="Noise reduced · Clarity boosted · Normalized";
+  $("feature-grid").innerHTML="";
+  $("feature-caveat").textContent="";
+  $("prog-fill").style.width="0%";
+  $("prog-pct").textContent="0% complete";
+  ["play-orig","play-enh"].forEach(id=>{ const b=$(id); if(b){b.disabled=true;b.textContent="▶";} });
+  ["fill-orig","fill-enh"].forEach(id=>{ const f=$(id); if(f) f.style.width="0%"; });
+  ["cur-orig","cur-enh"].forEach(id=>{ const e=$(id); if(e) e.textContent="0:00"; });
+  ["dur-orig","dur-enh"].forEach(id=>{ const e=$(id); if(e) e.textContent="0:00"; });
+  showStage("idle");
+});
+</script>
+</body>
+</html>

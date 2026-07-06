@@ -8,12 +8,13 @@
 // → Your apps → SDK setup and configuration).
 // ══════════════════════════════════════════════════════════════
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyC3brllXZwel_VBT8P34vog1L1UgDdbY0I",
+  authDomain: "yoursoftlab-f7246.firebaseapp.com",
+  projectId: "yoursoftlab-f7246",
+  storageBucket: "yoursoftlab-f7246.firebasestorage.app",
+  messagingSenderId: "183223578478",
+  appId: "1:183223578478:web:4b2c00feaed0c129385b7f",
+  measurementId: "G-DMPYH815BS"
 };
 
 // Hostnames this app is allowed to run from. Add your GitHub Pages

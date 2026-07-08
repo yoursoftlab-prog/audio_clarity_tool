@@ -26,7 +26,7 @@ export const firebaseConfig = {
 // before doing anything sensitive, like verifying a payment).
 // Treat this purely as a friendly speed bump.
 //export const allowedHosts = ["https://github.com/yoursoftlab-prog/audio_clarity_tool"];
-const allowedHosts = [
+export const allowedHosts = [
   "yoursoftlab.com",
   "www.yoursoftlab.com",
   "yoursoftlab-prog.github.io"

@@ -25,8 +25,12 @@ export const firebaseConfig = {
 // (e.g. a Cloud Function checking the request's Origin header
 // before doing anything sensitive, like verifying a payment).
 // Treat this purely as a friendly speed bump.
-export const allowedHosts = ["https://github.com/yoursoftlab-prog/audio_clarity_tool"];
-
+//export const allowedHosts = ["https://github.com/yoursoftlab-prog/audio_clarity_tool"];
+const allowedHosts = [
+  "yoursoftlab.com",
+  "www.yoursoftlab.com",
+  "yoursoftlab-prog.github.io"
+];
 // Number of free enhancements a signed-in, non-premium account gets.
 // Tracked in Firestore at usage/{uid} — see the main app script.
 export const FREE_LIMIT = 5;
@@ -51,14 +55,23 @@ export function isConfigured() {
   //}
 //}
 export function runOriginGate() {
-  const host = location.hostname;
+  const host = window.location.hostname;
 
-  alert("Hostname: " + host);
-
-  if (!allowedHosts.includes(host)) {
-    document.addEventListener("DOMContentLoaded", () => {
-      const el = document.getElementById("unauthorized-overlay");
-      if (el) el.style.display = "flex";
-    });
+  // Allow local development
+  if (host === "localhost" || host === "127.0.0.1") {
+    return;
   }
+
+  // Allow official domains
+  if (allowedHosts.includes(host)) {
+    return;
+  }
+
+  // Block all other domains
+  window.addEventListener("DOMContentLoaded", () => {
+    const overlay = document.getElementById("unauthorized-overlay");
+    if (overlay) {
+      overlay.style.display = "flex";
+    }
+  });
 }

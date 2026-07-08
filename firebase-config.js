@@ -41,8 +41,20 @@ export function isConfigured() {
 // Shows the "Unauthorized Copy" overlay if this page is running on
 // a hostname that isn't in allowedHosts. See the comment on
 // allowedHosts above — this is a deterrent, not real security.
+//export function runOriginGate() {
+  //const host = location.hostname;
+  //if (!allowedHosts.includes(host)) {
+    //document.addEventListener("DOMContentLoaded", () => {
+      //const el = document.getElementById("unauthorized-overlay");
+      //if (el) el.style.display = "flex";
+    //});
+  //}
+//}
 export function runOriginGate() {
   const host = location.hostname;
+
+  alert("Hostname: " + host);
+
   if (!allowedHosts.includes(host)) {
     document.addEventListener("DOMContentLoaded", () => {
       const el = document.getElementById("unauthorized-overlay");
